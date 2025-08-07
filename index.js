@@ -25,14 +25,139 @@ const AppCompleteMaman = () => {
     weatherCity: 'Paris,FR'
   });
 
-  // Chargement des données par défaut
+  // Chargement des données sauvegardées ou par défaut
   useEffect(() => {
-    loadDefaultData();
+    loadSavedData();
     loadRealWeather();
   }, []);
 
+  // Sauvegarde automatique à chaque changement
+  useEffect(() => {
+    if (contacts.length > 0) {
+      localStorage.setItem('app-contacts', JSON.stringify(contacts));
+    }
+  }, [contacts]);
+
+  useEffect(() => {
+    if (medicines.length > 0) {
+      localStorage.setItem('app-medicines', JSON.stringify(medicines));
+    }
+  }, [medicines]);
+
+  useEffect(() => {
+    if (events.length > 0) {
+      const eventsToSave = events.map(event => ({
+        ...event,
+        date: event.date.toISOString() // Convertir Date en string pour localStorage
+      }));
+      localStorage.setItem('app-events', JSON.stringify(eventsToSave));
+    }
+  }, [events]);
+
+  useEffect(() => {
+    if (shoppingList.length > 0) {
+      localStorage.setItem('app-shopping', JSON.stringify(shoppingList));
+    }
+  }, [shoppingList]);
+
+  useEffect(() => {
+    localStorage.setItem('app-settings', JSON.stringify(userSettings));
+  }, [userSettings]);
+
+  useEffect(() => {
+    if (weather && !weather.isLoading) {
+      localStorage.setItem('app-weather', JSON.stringify(weather));
+    }
+  }, [weather]);
+
+  const loadSavedData = () => {
+    try {
+      // Charger les paramètres utilisateur
+      const savedSettings = localStorage.getItem('app-settings');
+      if (savedSettings) {
+        const parsedSettings = JSON.parse(savedSettings);
+        setUserSettings(parsedSettings);
+      }
+
+      // Charger les contacts
+      const savedContacts = localStorage.getItem('app-contacts');
+      if (savedContacts) {
+        const parsedContacts = JSON.parse(savedContacts);
+        setContacts(parsedContacts);
+      } else {
+        // Contacts par défaut uniquement si rien n'est sauvegardé
+        const defaultContacts = [
+          { id: 1, name: 'Pierre', relation: 'Fils', phone: '06.12.34.56.78', emoji: '👨', urgent: false },
+          { id: 2, name: 'Marie', relation: 'Fille', phone: '06.87.65.43.21', emoji: '👩', urgent: false },
+          { id: 3, name: 'Dr. Martin', relation: 'Médecin', phone: '01.23.45.67.89', emoji: '👨‍⚕️', urgent: true }
+        ];
+        setContacts(defaultContacts);
+      }
+
+      // Charger les médicaments
+      const savedMedicines = localStorage.getItem('app-medicines');
+      if (savedMedicines) {
+        const parsedMedicines = JSON.parse(savedMedicines);
+        setMedicines(parsedMedicines);
+      } else {
+        const defaultMedicines = [
+          { id: 1, name: 'Vitamine D', time: '08:00', taken: false, color: 'jaune', notes: 'Au petit-déjeuner' },
+          { id: 2, name: 'Tension', time: '14:30', taken: false, color: 'blanche', notes: 'Après le repas' }
+        ];
+        setMedicines(defaultMedicines);
+      }
+
+      // Charger les événements
+      const savedEvents = localStorage.getItem('app-events');
+      if (savedEvents) {
+        const parsedEvents = JSON.parse(savedEvents).map(event => ({
+          ...event,
+          date: new Date(event.date) // Reconvertir string en Date
+        }));
+        setEvents(parsedEvents);
+      } else {
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const defaultEvents = [
+          { id: 1, title: 'Dr. Martin', time: '14:30', date: today, type: 'medical', important: true },
+          { id: 2, title: 'Appel Marie', time: '16:00', date: tomorrow, type: 'family', important: false }
+        ];
+        setEvents(defaultEvents);
+      }
+
+      // Charger la liste de courses
+      const savedShopping = localStorage.getItem('app-shopping');
+      if (savedShopping) {
+        const parsedShopping = JSON.parse(savedShopping);
+        setShoppingList(parsedShopping);
+      } else {
+        const defaultShopping = [
+          { id: 1, item: 'Pain', checked: false, category: 'Boulangerie' },
+          { id: 2, item: 'Lait', checked: false, category: 'Frais' }
+        ];
+        setShoppingList(defaultShopping);
+      }
+
+      // Charger la météo sauvegardée
+      const savedWeather = localStorage.getItem('app-weather');
+      if (savedWeather) {
+        const parsedWeather = JSON.parse(savedWeather);
+        setWeather(parsedWeather);
+      }
+
+      console.log('✅ Données chargées depuis la sauvegarde');
+    } catch (error) {
+      console.error('Erreur lors du chargement des données:', error);
+      // En cas d'erreur, charger les données par défaut
+      loadDefaultData();
+    }
+  };
+
   const loadDefaultData = () => {
-    // Contacts par défaut
+    // Fallback si erreur de chargement
+    console.log('⚠️ Chargement des données par défaut');
+    
     const defaultContacts = [
       { id: 1, name: 'Pierre', relation: 'Fils', phone: '06.12.34.56.78', emoji: '👨', urgent: false },
       { id: 2, name: 'Marie', relation: 'Fille', phone: '06.87.65.43.21', emoji: '👩', urgent: false },
@@ -40,24 +165,20 @@ const AppCompleteMaman = () => {
     ];
     setContacts(defaultContacts);
 
-    // Médicaments par défaut
     const defaultMedicines = [
       { id: 1, name: 'Vitamine D', time: '08:00', taken: false, color: 'jaune', notes: 'Au petit-déjeuner' },
       { id: 2, name: 'Tension', time: '14:30', taken: false, color: 'blanche', notes: 'Après le repas' }
     ];
     setMedicines(defaultMedicines);
 
-    // Événements
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-
     setEvents([
       { id: 1, title: 'Dr. Martin', time: '14:30', date: today, type: 'medical', important: true },
       { id: 2, title: 'Appel Marie', time: '16:00', date: tomorrow, type: 'family', important: false }
     ]);
 
-    // Liste de courses
     setShoppingList([
       { id: 1, item: 'Pain', checked: false, category: 'Boulangerie' },
       { id: 2, item: 'Lait', checked: false, category: 'Frais' }
@@ -454,7 +575,7 @@ const AppCompleteMaman = () => {
     </div>
   );
 
-  // ÉCRAN DE PARAMÈTRES
+  // ÉCRAN DE PARAMÈTRES avec options de sauvegarde
   const SettingsScreen = () => {
     const [tempSettings, setTempSettings] = useState({ ...userSettings });
     
@@ -462,6 +583,67 @@ const AppCompleteMaman = () => {
       setUserSettings(tempSettings);
       setCurrentScreen('home');
       alert('Paramètres sauvegardés ! ✅');
+    };
+
+    const clearAllData = () => {
+      if (window.confirm('⚠️ ATTENTION !\n\nCeci va supprimer TOUTES vos données :\n• Contacts personnalisés\n• Médicaments ajoutés\n• Liste de courses\n• Paramètres\n\nÊtes-vous sûre de vouloir tout effacer ?')) {
+        // Vider localStorage
+        localStorage.clear();
+        
+        // Recharger les données par défaut
+        loadDefaultData();
+        setUserSettings({ city: 'Paris', name: 'Maman', weatherCity: 'Paris,FR' });
+        
+        alert('✅ Application remise à zéro !\n\nVous retrouvez les données d\'origine.');
+        setCurrentScreen('home');
+      }
+    };
+
+    const exportData = () => {
+      try {
+        const allData = {
+          contacts: contacts,
+          medicines: medicines,
+          events: events.map(e => ({ ...e, date: e.date.toISOString() })),
+          shoppingList: shoppingList,
+          userSettings: userSettings,
+          weather: weather,
+          exportDate: new Date().toISOString(),
+          appVersion: '1.0'
+        };
+        
+        const dataStr = JSON.stringify(allData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `sauvegarde-agenda-maman-${new Date().toLocaleDateString('fr-FR').replace(/\//g, '-')}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        alert('💾 Sauvegarde téléchargée !\n\nVos données sont en sécurité dans le fichier téléchargé.');
+      } catch (error) {
+        alert('❌ Erreur lors de la sauvegarde.\nEssayez à nouveau.');
+      }
+    };
+
+    const checkDataStatus = () => {
+      const savedContacts = localStorage.getItem('app-contacts');
+      const savedMedicines = localStorage.getItem('app-medicines');
+      const savedSettings = localStorage.getItem('app-settings');
+      
+      let status = '📊 État de vos données :\n\n';
+      status += `👥 Contacts : ${contacts.length} enregistrés\n`;
+      status += `💊 Médicaments : ${medicines.length} enregistrés\n`;
+      status += `📅 Rendez-vous : ${events.length} enregistrés\n`;
+      status += `🛒 Articles courses : ${shoppingList.length} enregistrés\n`;
+      status += `⚙️ Paramètres : ${savedSettings ? 'Sauvegardés' : 'Par défaut'}\n\n`;
+      status += '✅ Toutes vos modifications sont automatiquement sauvegardées !';
+      
+      alert(status);
     };
 
     return (
@@ -500,6 +682,48 @@ const AppCompleteMaman = () => {
             <div className="mt-4 p-3 bg-white rounded-xl">
               <p className="text-sm text-gray-600">
                 <strong>Ville actuelle :</strong> {weather.city}
+              </p>
+            </div>
+          </div>
+
+          {/* Gestion des données */}
+          <div className="bg-green-50 rounded-3xl p-6 border-2 border-green-300">
+            <h3 className="text-2xl font-bold text-green-800 mb-4">💾 Mes Données</h3>
+            <div className="space-y-3">
+              <button 
+                onClick={checkDataStatus}
+                className="w-full p-4 bg-blue-500 text-white rounded-2xl text-lg font-bold hover:bg-blue-600"
+              >
+                📊 Vérifier mes Données
+              </button>
+              <button 
+                onClick={exportData}
+                className="w-full p-4 bg-green-500 text-white rounded-2xl text-lg font-bold hover:bg-green-600"
+              >
+                💾 Télécharger Sauvegarde
+              </button>
+            </div>
+            <div className="mt-4 p-3 bg-white rounded-xl">
+              <p className="text-sm text-green-700">
+                ✅ <strong>Auto-sauvegarde activée</strong><br/>
+                Toutes vos modifications sont automatiquement enregistrées !
+              </p>
+            </div>
+          </div>
+
+          {/* Zone danger */}
+          <div className="bg-red-50 rounded-3xl p-6 border-2 border-red-300">
+            <h3 className="text-2xl font-bold text-red-800 mb-4">⚠️ Zone Danger</h3>
+            <button 
+              onClick={clearAllData}
+              className="w-full p-4 bg-red-500 text-white rounded-2xl text-lg font-bold hover:bg-red-600"
+            >
+              🗑️ Remettre à Zéro l'App
+            </button>
+            <div className="mt-4 p-3 bg-white rounded-xl">
+              <p className="text-sm text-red-700">
+                ⚠️ <strong>Attention :</strong> Cette action supprime tout !<br/>
+                Pensez à faire une sauvegarde avant.
               </p>
             </div>
           </div>
